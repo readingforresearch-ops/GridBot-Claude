@@ -6,7 +6,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Custom Strategy Team - Integrated Edition"
 #property link      "https://www.exness.com"
-#property version   "10.10"
+#property version   "10.11"
 
 #include <Trade\Trade.mqh>
 
@@ -65,7 +65,7 @@ input bool     InpEnableFileLog  = true;   // Write events to daily CSV log file
 
 input group "=== 9. Guardian Integration & Notifications ==="
 input bool     InpEnableGuardianCoordination = true; // Coordinate with Guardian Hedge Bot
-input int      InpCoordinationCheckInterval = 5;     // Seconds between coordination checks
+input int      InpCoordinationCheckInterval = 1;     // Seconds between coordination checks (PA26: 5→1)
 input long     InpGuardianMagic       = 999999;      // Guardian bot magic (for master dashboard)
 input bool     InpEnablePushNotify    = true;        // Send Mobile Push Notifications
 input bool     InpEnableEmailNotify   = false;       // Send Email Notifications
@@ -217,7 +217,7 @@ void SendAlert(string msg);
 int OnInit()
 {
    Print("========================================");
-   Print("GridBot-Executor v10.10 - INTEGRATED EDITION");
+   Print("GridBot-Executor v10.11 - INTEGRATED EDITION");
    Print("Status: Guardian Coordination Enabled");
    Print("Note: Downward Extensions DISABLED");
    Print("========================================");
@@ -469,7 +469,7 @@ int OnInit()
 
 void OnDeinit(const int reason)
 {
-   Print("GridBot-Executor v10.10 - Shutting down");
+   Print("GridBot-Executor v10.11 - Shutting down");
    EventKillTimer();
    ObjectsDeleteAll(0, "GhostLine_");
    ObjectDelete(0, "SG_BreakEven");
@@ -1090,10 +1090,20 @@ void ManageGridEntry(double ask)
             }
          }
       
+         // PA26: last-line-of-defense — direct GV read bypasses poll cache.
+         // Catches the ~1s gap between Guardian publishing HEDGE_ACTIVE and the next
+         // CheckGuardianCoordination poll. No state/log update here (that's handled
+         // by CheckGuardianCoordination on the transition tick).
+         if(InpEnableGuardianCoordination) {
+            string immediateHedgeKey = GetGVKey("HEDGE_ACTIVE");
+            if(GlobalVariableCheck(immediateHedgeKey) && GlobalVariableGet(immediateHedgeKey) > 0.5)
+               continue;
+         }
+
          g_LevelLock[i] = true;
          string comment = "SG_L"+IntegerToString(i+1);
          double tp = InpUseVirtualTP ? 0 : GridTPs[i];
-         
+
          if(trade.BuyLimit(GridLots[i], target, _Symbol, 0, tp, ORDER_TIME_GTC, 0, comment)) {
             if(trade.ResultRetcode()==TRADE_RETCODE_DONE || trade.ResultRetcode()==TRADE_RETCODE_PLACED) {
                g_LevelTickets[i] = trade.ResultOrder();

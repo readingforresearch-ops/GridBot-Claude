@@ -6,7 +6,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Strategy Architect - Integrated Edition"
 #property link      "https://www.exness.com"
-#property version   "3.14"
+#property version   "3.15"
 
 #include <Trade\Trade.mqh>
 
@@ -573,10 +573,6 @@ void OnTick()
          ExecuteHedge(desiredStage);
       }
 
-      // C02 fix: publish HEDGE_ACTIVE via namespaced key
-      string hKey = GetCrossKey("HEDGE_ACTIVE");
-      if(hKey != "") GlobalVariableSet(hKey, g_HedgeActive ? 1.0 : 0.0);
-
       if(g_HedgeActive) {
          if(!VerifyHedgeHealthy()) {
             Print("Hedge health check failed - Resetting");
@@ -601,6 +597,14 @@ void OnTick()
       }
 
       g_LastFullCheck = TimeCurrent();
+   }
+
+   // PA26: publish HEDGE_ACTIVE every tick (was inside 5s rate-limited block — C02 location).
+   // Guarantees Executor sees freeze signal at tick resolution after Guardian restart.
+   // PA18 point-of-state-change clears inside VerifyHedgeHealthy/ManageUnwindLogic remain.
+   {
+      string hKey = GetCrossKey("HEDGE_ACTIVE");
+      if(hKey != "") GlobalVariableSet(hKey, g_HedgeActive ? 1.0 : 0.0);
    }
 
    UpdateDashboard(currentDD);
