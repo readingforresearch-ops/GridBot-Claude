@@ -1508,6 +1508,10 @@ void CheckForOptimizationUpdates()
             if(g_UsingAutoDefaults) { g_UsingAutoDefaults = false; Print("AUTO-RANGE deactivated — using Planner config"); }
             IsTradingActive = true;
             SendAlert("OPTIMIZATION APPLIED: " + DoubleToString(newUpper, _Digits) + " - " + DoubleToString(newLower, _Digits));
+            WriteLog("PUSH_APPLIED", 0, 0, 0, 0,
+               StringFormat("upper=%.2f lower=%.2f levels=%d coeff=%.4f lot1=%.2f lot2=%.2f lot3=%.2f spread=%d",
+               g_CurrentUpper, g_CurrentLower, g_CurrentLevels, g_ActiveExpansionCoeff,
+               g_RuntimeLot1, g_RuntimeLot2, g_RuntimeLot3, g_RuntimeMaxSpread));
          }
       }
    }
