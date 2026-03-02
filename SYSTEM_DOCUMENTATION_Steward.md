@@ -327,11 +327,14 @@ With two instances, each engine exclusively uses its own CTrade:
 2. SaveGridState()        — writes all grid GVs
 3. SaveHedgeState()       — writes all hedge GVs
 4. GlobalVariableDel("STEWARD_ACTIVE_{symbol}_{magic}")
-5. GlobalVariableSet("{magic}_SG_BOT_ACTIVE", 0)
-6. GlobalVariableSet("{magic}_SG_HEDGE_ACTIVE", currentState)  // for Planner display
-7. ObjectsDeleteAll — ghost lines, break-even
-8. DashCleanup()          — remove dashboard objects
+5. if(reason != REASON_CHARTCHANGE):
+   a. GlobalVariableSet("{magic}_SG_BOT_ACTIVE", 0)
+   b. GlobalVariableSet("{magic}_SG_HEDGE_ACTIVE", currentState)
+   c. ObjectsDeleteAll — ghost lines, break-even
+   d. DashCleanup()    — remove dashboard objects
 ```
+
+**REASON_CHARTCHANGE handling:** When the user switches timeframe on the Steward chart, MT5 calls OnDeinit with reason `REASON_CHARTCHANGE` then immediately calls OnInit. Steps 5a-5d are skipped — `BOT_ACTIVE` stays `1`, chart objects remain visible, Planner sees no interruption. State save and instance guard cycle always run regardless of reason.
 
 ### On Startup (OnInit)
 
@@ -690,6 +693,8 @@ These were cleaned from Planner in PA17. Old Planner versions may write OPT_NEW_
 - [ ] PA22: after unwind, hard stop floor resets (peak shown in dashboard drops to post-hedge balance)
 - [ ] PA23: create position with manually mismatched price → verify it gets a TP via orphan path
 - [ ] PA24: CSV file appears in MQL5\Files, Bot column = "STEWARD"
+- [ ] PUSH_APPLIED: push range from Planner → CSV row with event=PUSH_APPLIED and Notes showing new params
+- [ ] Timeframe switch: switch chart timeframe → BOT_ACTIVE stays 1, ghost lines stay, OnInit resumes correctly
 - [ ] Planner: attach Planner with same magic → verify HUD shows correct grid range and hedge status
 - [ ] PUSH TO LIVE: push new range from Planner → Steward rebuilds grid correctly
 - [ ] Hard stop: temporarily set InpHardStopDDPct = 0.1% → verify CloseAllGridPositions fires

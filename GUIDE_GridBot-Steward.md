@@ -701,6 +701,7 @@ Timestamp, Bot, Event, Symbol, Level, Price, Lot, Ticket, Equity, Balance, Peak,
 | `TP_CLOSE_ORPHAN` | Orphaned position TP close (PA23) |
 | `ORDER_FAIL` | BuyLimit order failed |
 | `DREDGED` | Bucket dredge position close |
+| `PUSH_APPLIED` | Planner PUSH TO LIVE accepted and applied |
 
 ---
 
@@ -741,6 +742,15 @@ Set `InpShowDashboard = true`. Ensure the chart has enough vertical space. The p
 
 ### Auto-Range warning in dashboard
 Steward detected you left the default 2750/2650 range while trading a non-gold instrument. Open Planner, configure the correct range, and use PUSH TO LIVE to apply it. The warning clears automatically after the first successful push.
+
+### Switching timeframes on the Steward chart
+Safe to do. Steward detects `REASON_CHARTCHANGE` in `OnDeinit` and skips the destructive shutdown steps — `BOT_ACTIVE` stays `1`, ghost lines and dashboard remain on chart. State is saved and the instance guard is cycled normally. OnInit re-runs immediately and resumes from saved state.
+
+**Avoid switching timeframe while:**
+- A hedge is active (unnecessary risk during the brief re-init gap)
+- A PUSH TO LIVE grid rebuild is in progress (wait for "OPTIMIZATION APPLIED" alert)
+
+**Best practice:** Attach Steward to a dedicated blank chart and run your analysis on a separate chart — then timeframe switches never touch the EA.
 
 ---
 
