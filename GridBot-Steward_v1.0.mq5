@@ -655,11 +655,14 @@ void OnDeinit(const int reason)
    SaveGridState();
    SaveHedgeState();
    GlobalVariableDel("STEWARD_ACTIVE_" + _Symbol + "_" + IntegerToString(InpGridMagic));
-   GlobalVariableSet(GetGridGVKey("BOT_ACTIVE"), 0);
-   GlobalVariableSet(GetGridGVKey("HEDGE_ACTIVE"), g_HedgeActive ? 1.0 : 0.0); // Planner display
-   ObjectsDeleteAll(0, "GhostLine_");
-   ObjectDelete(0, "SG_BreakEven");
-   DashCleanup();
+
+   if(reason != REASON_CHARTCHANGE) {
+      GlobalVariableSet(GetGridGVKey("BOT_ACTIVE"), 0);
+      GlobalVariableSet(GetGridGVKey("HEDGE_ACTIVE"), g_HedgeActive ? 1.0 : 0.0); // Planner display
+      ObjectsDeleteAll(0, "GhostLine_");
+      ObjectDelete(0, "SG_BreakEven");
+      DashCleanup();
+   }
 }
 
 //+------------------------------------------------------------------+
